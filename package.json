@@ -1,0 +1,20 @@
+{
+  "name": "threads-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Read any public Threads post without logging in. Paste a link, get clean HTML, JSON or Markdown — built for people and AI agents.",
+  "type": "module",
+  "main": "src/handler.js",
+  "scripts": {
+    "start": "node src/node-server.js",
+    "dev": "node --watch src/node-server.js",
+    "test": "node --test",
+    "vercel-dev": "vercel dev"
+  },
+  "engines": {
+    "node": ">=20.18.1"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0"
+  }
+}

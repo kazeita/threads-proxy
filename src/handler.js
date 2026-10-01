@@ -216,7 +216,8 @@ export async function handle(req, info = {}) {
       const ref = parseThreadsRef(q);
       return ref ? threadResponse(req, url, info, ref, format, q) : badInput(format, q);
     }
-    if (/^\/api\/thread(\.json|\.md|\.txt)?$/.test(path)) {
+    // /fetch is the public API; /api/thread is kept as an alias for older links.
+    if (/^\/(fetch|api\/thread)(\.json|\.md|\.txt)?$/.test(path)) {
       const q = url.searchParams.get('url') || url.searchParams.get('code') || '';
       const f = url.searchParams.get('format');
       const format = path.endsWith('.md') || f === 'md' ? 'md' : path.endsWith('.txt') || f === 'text' ? 'text' : 'json';
@@ -225,7 +226,7 @@ export async function handle(req, info = {}) {
     }
     if (path === '/media') return proxyMedia(req, url);
     if (path === '/llms.txt') return respond(renderLlmsTxt({ origin: originOf(req, url) }), 200, TEXT, { ...CORS, 'cache-control': 'public, s-maxage=3600' });
-    if (path === '/robots.txt') return respond('User-agent: *\nDisallow: /media\nDisallow: /api/\n', 200, TEXT);
+    if (path === '/robots.txt') return respond('User-agent: *\nDisallow: /media\nDisallow: /fetch\nDisallow: /api/\n', 200, TEXT);
     if (path === '/healthz') return respond('ok\n', 200, TEXT, { 'cache-control': 'no-store' });
     if (path === '/favicon.ico') return new Response(null, { status: 204 });
 

@@ -179,8 +179,8 @@ export function renderHome({ origin }) {
 </section>
 <section class="agents">
   <h2>For AI agents &amp; scripts</h2>
-<pre>GET ${esc(origin)}/api/thread?url=&lt;threads link&gt;          → JSON
-GET ${esc(origin)}/api/thread.md?url=&lt;threads link&gt;       → Markdown
+<pre>GET ${esc(origin)}/fetch?url=&lt;threads link&gt;          → JSON
+GET ${esc(origin)}/fetch.md?url=&lt;threads link&gt;       → Markdown
 GET ${esc(origin)}/@user/post/CODE?format=md|json|text</pre>
   <div class="hint">Media URLs in responses include a <code>proxyUrl</code> that works without Meta's hotlink restrictions. Full notes at <a href="/llms.txt">/llms.txt</a>.</div>
 </section>`;
@@ -292,8 +292,8 @@ export function renderThread(result, { origin, query }) {
     ? `<div class="chain">${context.map((p) => renderPost(p) + '<div class="link"></div>').join('')}</div>`
     : '';
   const proxyPath = `/t/${encodeURIComponent(result.code)}`;
-  const jsonUrl = `/api/thread?url=${encodeURIComponent(result.url)}`;
-  const mdUrl = `/api/thread.md?url=${encodeURIComponent(result.url)}`;
+  const jsonUrl = `/fetch?url=${encodeURIComponent(result.url)}`;
+  const mdUrl = `/fetch.md?url=${encodeURIComponent(result.url)}`;
 
   const self = selfThread.length
     ? `<section class="section"><h2>Continued by @${esc(u.username || '')}</h2>${selfThread.map((p) => `<div class="rthread">${renderReply(p)}</div>`).join('')}</section>`
@@ -460,9 +460,9 @@ export function renderLlmsTxt({ origin }) {
 
 ## Endpoints
 
-- GET ${origin}/api/thread.md?url={threads_url} : Markdown (best for reading)
-- GET ${origin}/api/thread?url={threads_url} : JSON
-- GET ${origin}/api/thread.txt?url={threads_url} : plain text
+- GET ${origin}/fetch.md?url={threads_url} : Markdown (best for reading)
+- GET ${origin}/fetch?url={threads_url} : JSON
+- GET ${origin}/fetch.txt?url={threads_url} : plain text
 - GET ${origin}/@{user}/post/{code} : HTML page (mirrors threads.com paths). Add ?format=json, ?format=md or ?format=text for other formats.
 - GET ${origin}/t/{code} : same, username not needed
 - GET ${origin}/media?u={cdn_url} : fetches images/videos from Meta's CDN (cdninstagram.com, fbcdn.net)

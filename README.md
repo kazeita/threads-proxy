@@ -31,16 +31,16 @@ Node 20.18+ is required. Docker also works: `docker build -t threads-proxy . && 
 | Home (paste box) | `/` |
 | View a post | `/view?url=https://www.threads.com/@user/post/CODE` |
 | Mirror path (swap the domain) | `/@user/post/CODE` or `/t/CODE` |
-| JSON | `/api/thread?url=…` or `?format=json` on any post path |
-| Markdown | `/api/thread.md?url=…` or `?format=md` |
-| Plain text | `/api/thread.txt?url=…` or `?format=text` |
+| JSON | `/fetch?url=…` or `?format=json` on any post path |
+| Markdown | `/fetch.md?url=…` or `?format=md` |
+| Plain text | `/fetch.txt?url=…` or `?format=text` |
 | Agent instructions | `/llms.txt` |
 | Media passthrough | `/media?u=<cdn url>` (Meta CDN hosts only) |
 
-`url` accepts full links (threads.com or threads.net, with tracking params), `@user/post/CODE`, or a bare shortcode. Post paths also respond to `Accept: application/json` and `Accept: text/markdown`.
+`/api/thread…` still works as an alias for `/fetch…`. `url` accepts full links (threads.com or threads.net, with tracking params), `@user/post/CODE`, or a bare shortcode. Post paths also respond to `Accept: application/json` and `Accept: text/markdown`.
 
 ```bash
-curl "https://your-app.vercel.app/api/thread.md?url=https://www.threads.com/@zuck/post/Ddt7cL5EfUG"
+curl "https://your-app.vercel.app/fetch.md?url=https://www.threads.com/@zuck/post/Ddt7cL5EfUG"
 ```
 
 ## How it works

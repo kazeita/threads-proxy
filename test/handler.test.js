@@ -32,7 +32,7 @@ test('home and static routes', async () => {
   assert.equal(r.status, 200);
   assert.match(await r.text(), /Read any Threads post/);
   assert.equal((await get('/healthz')).status, 200);
-  assert.match(await (await get('/llms.txt')).text(), /api\/thread\.md/);
+  assert.match(await (await get("/llms.txt")).text(), /\/fetch\.md\?url=/);
 });
 
 test('vercel rewrite path (?__p=) is honoured', async () => {
@@ -47,10 +47,10 @@ test('vercel rewrite path (?__p=) is honoured', async () => {
 });
 
 test('api formats', async () => {
-  const j = await (await get('/api/thread?url=' + encodeURIComponent('https://www.threads.net/@zuck/post/Ddt7cL5EfUG?xmt=1'))).json();
+  const j = await (await get('/fetch?url=' + encodeURIComponent('https://www.threads.net/@zuck/post/Ddt7cL5EfUG?xmt=1'))).json();
   assert.equal(j.source, 'page');
   assert.equal(j.post.stats.likes, 5017);
-  const md = await get('/api/thread.md?url=Ddt7cL5EfUG');
+  const md = await get('/fetch.md?url=Ddt7cL5EfUG');
   assert.match(md.headers.get('content-type'), /markdown/);
   assert.match(await md.text(), /## Replies/);
   const txt = await (await get('/@zuck/post/Ddt7cL5EfUG?format=text')).text();
@@ -60,7 +60,8 @@ test('api formats', async () => {
 });
 
 test('errors', async () => {
-  assert.equal((await get('/api/thread?url=nope')).status, 400);
+  assert.equal((await get('/fetch?url=nope')).status, 400);
+  assert.equal((await get('/api/thread?url=nope')).status, 400, 'legacy alias still routed');
   const nf = await get('/t/DOdVHOeERQj?format=json');
   assert.equal(nf.status, 404);
   assert.equal((await nf.json()).ok, false);

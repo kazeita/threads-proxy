@@ -226,7 +226,8 @@ export async function handle(req, info = {}) {
     }
     if (path === '/media') return proxyMedia(req, url);
     if (path === '/llms.txt') return respond(renderLlmsTxt({ origin: originOf(req, url) }), 200, TEXT, { ...CORS, 'cache-control': 'public, s-maxage=3600' });
-    if (path === '/robots.txt') return respond('User-agent: *\nDisallow: /media\nDisallow: /fetch\nDisallow: /api/\n', 200, TEXT);
+    // Allow everything: AI agents' fetch tools (Claude, ChatGPT, …) obey robots.txt, and reading posts is the point.
+    if (path === '/robots.txt') return respond('User-agent: *\nAllow: /\n', 200, TEXT, { 'cache-control': 'public, max-age=300' });
     if (path === '/healthz') return respond('ok\n', 200, TEXT, { 'cache-control': 'no-store' });
     if (path === '/favicon.ico') return new Response(null, { status: 204 });
 

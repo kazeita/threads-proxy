@@ -32,6 +32,8 @@ test('home and static routes', async () => {
   assert.equal(r.status, 200);
   assert.match(await r.text(), /Read any Threads post/);
   assert.equal((await get('/healthz')).status, 200);
+  const robots = await (await get('/robots.txt')).text();
+  assert.doesNotMatch(robots, /Disallow/, 'agents must be allowed to fetch');
   assert.match(await (await get("/llms.txt")).text(), /\/fetch\.md\?url=/);
 });
 

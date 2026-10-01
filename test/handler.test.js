@@ -81,3 +81,36 @@ test('media proxy only allows Meta CDN', async () => {
   assert.equal((await get('/media?u=' + encodeURIComponent('https://evil.example/x'))).status, 403);
   assert.equal((await get('/media?u=' + encodeURIComponent('https://evil.example.fbcdn.net.attacker.com/x'))).status, 403);
 });
+
+test('query-free path forms work (some agent fetchers drop query strings)', async () => {
+  for (const [p, type, needle] of [
+    ['/t/Ddt7cL5EfUG.md', /markdown/, /^# Threads post by @zuck/],
+    ['/t/Ddt7cL5EfUG.json', /json/, /"ok": true/],
+    ['/t/Ddt7cL5EfUG.txt', /text\/plain/, /=== Replies ===/],
+    ['/@zuck/post/Ddt7cL5EfUG.md', /markdown/, /## Replies/],
+    ['/fetch.md/Ddt7cL5EfUG', /markdown/, /^# Threads post/],
+    ['/fetch.md/https://www.threads.com/@zuck/post/Ddt7cL5EfUG', /markdown/, /^# Threads post/],
+    ['/fetch.md/https:/www.threads.com/@zuck/post/Ddt7cL5EfUG', /markdown/, /^# Threads post/],
+    ['/fetch.md/' + encodeURIComponent('https://www.threads.com/@zuck/post/Ddt7cL5EfUG?xmt=abc'), /markdown/, /^# Threads post/],
+    ['/fetch/Ddt7cL5EfUG', /json/, /"directRepliesShown": 2/],
+  ]) {
+    const r = await get(p, { accept: 'text/html' });
+    assert.equal(r.status, 200, p);
+    assert.match(r.headers.get('content-type'), type, p);
+    assert.match(await r.text(), needle, p);
+  }
+});
+
+test('same paths via the Vercel rewrite', async () => {
+  const r = await handle(new Request('https://proxy.example/api/index?__p=' + encodeURIComponent('fetch.md/https://www.threads.com/@zuck/post/Ddt7cL5EfUG')));
+  assert.equal(r.status, 200);
+  assert.match(await r.text(), /^# Threads post/);
+  const t = await handle(new Request('https://proxy.example/api/index?__p=t/Ddt7cL5EfUG.json'));
+  assert.equal((await t.json()).code, 'Ddt7cL5EfUG');
+});
+
+test('format param still works on /t/ and responses vary on Accept', async () => {
+  const r = await get('/t/Ddt7cL5EfUG?format=json', { accept: 'text/html' });
+  assert.match(r.headers.get('content-type'), /json/);
+  assert.equal(r.headers.get('vary'), 'Accept');
+});

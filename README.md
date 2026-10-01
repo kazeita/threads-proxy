@@ -29,18 +29,20 @@ Node 20.18+ is required. Docker also works: `docker build -t threads-proxy . && 
 | What | URL |
 |---|---|
 | Home (paste box) | `/` |
-| View a post | `/view?url=https://www.threads.com/@user/post/CODE` |
-| Mirror path (swap the domain) | `/@user/post/CODE` or `/t/CODE` |
-| JSON | `/fetch?url=…` or `?format=json` on any post path |
-| Markdown | `/fetch.md?url=…` or `?format=md` |
-| Plain text | `/fetch.txt?url=…` or `?format=text` |
+| View a post (HTML) | `/t/CODE` or `/@user/post/CODE` (swap the domain in any Threads link) |
+| Markdown | `/t/CODE.md`, `/@user/post/CODE.md`, `/fetch.md/<any link or code>` |
+| JSON | `/t/CODE.json`, `/fetch/<any link or code>` |
+| Plain text | `/t/CODE.txt`, `/fetch.txt/<any link or code>` |
+| Query forms | `/fetch.md?url=…`, `/fetch?url=…`, `?format=md\|json\|text`, `/view?url=…` |
 | Agent instructions | `/llms.txt` |
 | Media passthrough | `/media?u=<cdn url>` (Meta CDN hosts only) |
+
+Prefer the query-free forms for AI agents. Some agent fetch tools (Claude.ai's included) drop query strings from URLs they build themselves, so `?url=` arrives empty and `?format=` is ignored.
 
 `/api/thread…` still works as an alias for `/fetch…`. `url` accepts full links (threads.com or threads.net, with tracking params), `@user/post/CODE`, or a bare shortcode. Post paths also respond to `Accept: application/json` and `Accept: text/markdown`.
 
 ```bash
-curl "https://your-app.vercel.app/fetch.md?url=https://www.threads.com/@zuck/post/Ddt7cL5EfUG"
+curl "https://your-app.vercel.app/t/Ddt7cL5EfUG.md"
 ```
 
 ## How it works

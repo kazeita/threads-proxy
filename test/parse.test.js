@@ -209,6 +209,8 @@ test('fetchThread prefers the post page and sends a browser Accept header', asyn
   const r = await fetchThread({ code: 'Ddt7cL5EfUG', username: 'zuck' }, { fetchImpl: f });
   assert.equal(r.source, 'page');
   assert.equal(r.replyCount, 496);
+  assert.equal(r.directRepliesShown, 2);
+  assert.equal(r.nestedRepliesShown, 1);
   assert.equal(r.replies.length, 2);
   assert.match(seenAccept, /^text\/html,application\/xhtml\+xml,application\/xml;q=0\.9/);
   assert.equal(r.note, undefined);
@@ -219,12 +221,12 @@ test('markdown includes replies, nesting and the more-replies note', async () =>
     String(url) === 'https://www.threads.com/t/Ddt7cL5EfUG' ? new Response(fx('page-carousel')) : new Response('', { status: 404 });
   const r = await fetchThread({ code: 'Ddt7cL5EfUG', username: null }, { fetchImpl: f });
   const md = renderMarkdown(r, { origin: 'http://x' });
-  assert.match(md, /## Replies \(3 shown of 496\)/);
+  assert.match(md, /## Replies \(2 of 496 direct replies shown, plus 1 nested\)/);
   assert.match(md, /- \*\*@i_am_omerj\*\* ✓/);
   assert.match(md, /\n  - \*\*@musetipsdaily\*\*/);
   assert.match(md, /Quotes: 47/);
   assert.match(md, /More replies exist/);
   const html = renderThread(r, { origin: 'http://x' });
-  assert.match(html, /showing 3 of 496/);
+  assert.match(html, /showing 2 of 496 · \+1 nested/);
   assert.match(html, /href="\/t\/DdwX1zzmws_">1 replies →|href="\/t\/DdwX1zzmws_"/);
 });

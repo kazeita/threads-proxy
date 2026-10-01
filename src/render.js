@@ -179,9 +179,9 @@ export function renderHome({ origin }) {
 </section>
 <section class="agents">
   <h2>For AI agents &amp; scripts</h2>
-<pre>GET ${esc(origin)}/fetch?url=&lt;threads link&gt;          → JSON
-GET ${esc(origin)}/fetch.md?url=&lt;threads link&gt;       → Markdown
-GET ${esc(origin)}/@user/post/CODE?format=md|json|text</pre>
+<pre>GET ${esc(origin)}/t/CODE.md                    → Markdown
+GET ${esc(origin)}/t/CODE.json                  → JSON
+GET ${esc(origin)}/fetch.md/&lt;threads link&gt;      → Markdown, any link form</pre>
   <div class="hint">Media URLs in responses include a <code>proxyUrl</code> that works without Meta's hotlink restrictions. Full notes at <a href="/llms.txt">/llms.txt</a>.</div>
 </section>`;
   return layout({
@@ -284,6 +284,13 @@ function renderReply(p) {
 </div>`;
 }
 
+/** Direct replies vs. replies-to-replies. replyCount from Threads counts direct replies only. */
+function replyTally(result) {
+  const direct = result.replies?.length || 0;
+  const all = (result.replies || []).reduce((n, t) => n + t.posts.length, 0);
+  return { direct, nested: all - direct };
+}
+
 export function renderThread(result, { origin, query }) {
   const { post, context = [], selfThread = [], replies = [] } = result;
   const u = post.author || {};
@@ -292,8 +299,8 @@ export function renderThread(result, { origin, query }) {
     ? `<div class="chain">${context.map((p) => renderPost(p) + '<div class="link"></div>').join('')}</div>`
     : '';
   const proxyPath = `/t/${encodeURIComponent(result.code)}`;
-  const jsonUrl = `/fetch?url=${encodeURIComponent(result.url)}`;
-  const mdUrl = `/fetch.md?url=${encodeURIComponent(result.url)}`;
+  const jsonUrl = `/t/${encodeURIComponent(result.code)}.json`;
+  const mdUrl = `/t/${encodeURIComponent(result.code)}.md`;
 
   const self = selfThread.length
     ? `<section class="section"><h2>Continued by @${esc(u.username || '')}</h2>${selfThread.map((p) => `<div class="rthread">${renderReply(p)}</div>`).join('')}</section>`
@@ -301,9 +308,12 @@ export function renderThread(result, { origin, query }) {
 
   let repliesHtml = '';
   if (result.source === 'page') {
-    const shown = replies.reduce((n, t) => n + t.posts.length, 0);
+    const { direct, nested } = replyTally(result);
     const total = result.replyCount;
-    const head = `<h2>Replies <span>${shown ? `showing ${shown}${total ? ` of ${nf.format(total)}` : ''}` : 'none yet'}</span></h2>`;
+    const label = direct
+      ? `showing ${direct}${total ? ` of ${nf.format(total)}` : ''}${nested ? ` · +${nested} nested` : ''}`
+      : 'none yet';
+    const head = `<h2>Replies <span>${label}</span></h2>`;
     const more = result.hasMoreReplies
       ? `<div class="more">Threads only shows this first batch of replies to logged-out visitors. Open a reply to see its own replies, or <a href="${esc(result.url)}" target="_blank" rel="noopener">view the rest on Threads ↗</a>.</div>`
       : '';
@@ -420,14 +430,18 @@ export function renderMarkdown(result, { origin }) {
     result.selfThread.forEach((p) => out.push(mdReply(p, 0)));
   }
   if (result.source === 'page') {
-    const shown = result.replies.reduce((n, t) => n + t.posts.length, 0);
-    out.push('', `## Replies (${shown} shown${result.replyCount ? ` of ${nf.format(result.replyCount)}` : ''})`, '');
-    if (!shown) out.push('_No replies yet._');
+    const { direct, nested } = replyTally(result);
+    out.push(
+      '',
+      `## Replies (${direct}${result.replyCount ? ` of ${nf.format(result.replyCount)}` : ''} direct replies shown${nested ? `, plus ${nested} nested` : ''})`,
+      '',
+    );
+    if (!direct) out.push('_No replies yet._');
     result.replies.forEach((t) => {
       t.posts.forEach((p, i) => out.push(mdReply(p, i)));
     });
     if (result.hasMoreReplies) {
-      out.push('', `_More replies exist but Threads only serves the first batch without login. Fetch ${origin}/t/{code}?format=md for a reply's own sub-thread._`);
+      out.push('', `_More replies exist but Threads only serves the first batch without login. Fetch ${origin}/t/{code}.md for a reply's own sub-thread._`);
     }
   } else if (result.post.stats?.replies) {
     out.push('', '_Replies unavailable (limited source)._');
@@ -460,16 +474,22 @@ export function renderLlmsTxt({ origin }) {
 
 ## Endpoints
 
-- GET ${origin}/fetch.md?url={threads_url} : Markdown (best for reading)
-- GET ${origin}/fetch?url={threads_url} : JSON
-- GET ${origin}/fetch.txt?url={threads_url} : plain text
-- GET ${origin}/@{user}/post/{code} : HTML page (mirrors threads.com paths). Add ?format=json, ?format=md or ?format=text for other formats.
-- GET ${origin}/t/{code} : same, username not needed
+Prefer these query-free forms. Some fetch tools drop query strings, which breaks \`?url=\` and \`?format=\`.
+
+- GET ${origin}/t/{code}.md : Markdown (best for reading). {code} is the part after /post/ in a Threads link.
+- GET ${origin}/t/{code}.json : JSON
+- GET ${origin}/t/{code}.txt : plain text
+- GET ${origin}/t/{code} : HTML page
+- GET ${origin}/@{user}/post/{code}.md : same, mirroring threads.com paths (.json / .txt work too)
+- GET ${origin}/fetch.md/{threads_link_or_code} : Markdown for any link form, e.g. ${origin}/fetch.md/https://www.threads.com/@zuck/post/Ddt7cL5EfUG
+- GET ${origin}/fetch/{threads_link_or_code} : JSON (also /fetch.txt/…)
+
+Query forms also work when your tool keeps query strings: /fetch.md?url={threads_url}, /fetch?url=…, /t/{code}?format=md|json|text.
+
 - GET ${origin}/media?u={cdn_url} : fetches images/videos from Meta's CDN (cdninstagram.com, fbcdn.net)
 
-\`url\` accepts a full link (with or without tracking params), "@user/post/CODE", or a bare shortcode.
-
-To read deeper into a conversation, request a reply's own code: its page lists that reply's replies.
+To read deeper into a conversation, fetch a reply's own code (/t/{reply_code}.md): it lists that reply's replies.
+"Replies (10 of 62 direct replies shown, plus 3 nested)": the 62 counts direct replies only; nested ones are replies to replies.
 
 ## JSON shape
 

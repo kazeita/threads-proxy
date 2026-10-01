@@ -93,6 +93,8 @@ function decorate(result, origin) {
   };
 }
 
+const EXT_FORMAT = { json: 'json', md: 'md', markdown: 'md', txt: 'text', text: 'text' };
+
 function pickFormat(req, url) {
   const f = (url.searchParams.get('format') || '').toLowerCase();
   if (f === 'markdown' || f === 'md') return 'md';
@@ -118,7 +120,8 @@ async function threadResponse(req, url, info, ref, format, query) {
   }
   try {
     const result = await getThread(ref);
-    const cacheHdr = { 'cache-control': `public, max-age=60, s-maxage=${CACHE_TTL}, stale-while-revalidate=${CACHE_TTL * 2}` };
+    // Vary: Accept because extension-less post paths negotiate the format from the Accept header.
+    const cacheHdr = { 'cache-control': `public, max-age=60, s-maxage=${CACHE_TTL}, stale-while-revalidate=${CACHE_TTL * 2}`, vary: 'Accept' };
     switch (format) {
       case 'json':
         return respond(JSON.stringify(decorate(result, origin), null, 2), 200, JSON_T, { ...CORS, ...cacheHdr });
@@ -217,10 +220,22 @@ export async function handle(req, info = {}) {
       return ref ? threadResponse(req, url, info, ref, format, q) : badInput(format, q);
     }
     // /fetch is the public API; /api/thread is kept as an alias for older links.
-    if (/^\/(fetch|api\/thread)(\.json|\.md|\.txt)?$/.test(path)) {
-      const q = url.searchParams.get('url') || url.searchParams.get('code') || '';
-      const f = url.searchParams.get('format');
-      const format = path.endsWith('.md') || f === 'md' ? 'md' : path.endsWith('.txt') || f === 'text' ? 'text' : 'json';
+    // The link can be a query param (/fetch.md?url=…) or part of the path (/fetch.md/<link or code>).
+    // Path forms matter: some agent fetch tools drop query strings from URLs they build themselves.
+    const api = path.match(/^\/(?:fetch|api\/thread)(?:\.(json|md|txt))?(?:\/(.*))?$/);
+    if (api) {
+      let q = url.searchParams.get('url') || url.searchParams.get('code') || '';
+      if (!q && api[2]) {
+        q = api[2];
+        try {
+          q = decodeURIComponent(q);
+        } catch {
+          /* as-is */
+        }
+        q = q.replace(/^(https?:)\/(?!\/)/i, '$1//'); // proxies collapse "https://" to "https:/"
+      }
+      const f = (url.searchParams.get('format') || '').toLowerCase();
+      const format = EXT_FORMAT[api[1]] || EXT_FORMAT[f] || 'json';
       const ref = parseThreadsRef(q);
       return ref ? threadResponse(req, url, info, ref, format, q) : badInput(format, q);
     }
@@ -231,9 +246,10 @@ export async function handle(req, info = {}) {
     if (path === '/healthz') return respond('ok\n', 200, TEXT, { 'cache-control': 'no-store' });
     if (path === '/favicon.ico') return new Response(null, { status: 204 });
 
-    // Mirrored Threads paths: /@user/post/CODE, /t/CODE (with optional suffixes)
-    const ref = parseThreadsPath(path);
-    if (ref) return threadResponse(req, url, info, ref, pickFormat(req, url), canonicalUrl(ref));
+    // Mirrored Threads paths: /@user/post/CODE, /t/CODE, with an optional .md/.json/.txt extension
+    const ext = (path.match(/\.(json|md|txt)$/) || [])[1];
+    const ref = parseThreadsPath(ext ? path.slice(0, -(ext.length + 1)) : path);
+    if (ref) return threadResponse(req, url, info, ref, EXT_FORMAT[ext] || pickFormat(req, url), canonicalUrl(ref));
 
     // A whole URL pasted after the slash: /https://www.threads.com/@x/post/Y
     let tail = path.slice(1) + url.search;

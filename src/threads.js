@@ -107,7 +107,9 @@ function finish(base, source, parsed, notes = []) {
     context: parsed.context || [],
     selfThread: parsed.selfThread || [],
     replies: parsed.replies || [],
-    replyCount: post.stats?.replies ?? null,
+    replyCount: post.stats?.replies ?? null, // direct replies, as counted by Threads
+    directRepliesShown: (parsed.replies || []).length,
+    nestedRepliesShown: (parsed.replies || []).reduce((n, t) => n + t.posts.length - 1, 0),
     hasMoreReplies: !!parsed.hasMoreReplies,
     ...(source !== 'page' && notes.length ? { note: notes.join('; ') } : {}),
   };

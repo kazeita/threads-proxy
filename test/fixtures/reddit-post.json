@@ -1,0 +1,141 @@
+[
+  {
+    "kind": "Listing",
+    "data": {
+      "children": [
+        {
+          "kind": "t3",
+          "data": {
+            "id": "1fxk2ab",
+            "name": "t3_1fxk2ab",
+            "subreddit": "webdev",
+            "subreddit_name_prefixed": "r/webdev",
+            "title": "What's one tool you can't live without? & why",
+            "author": "pixel_wrangler",
+            "author_flair_text": "full-stack",
+            "link_flair_text": "Discussion",
+            "selftext": "I'll start: **ripgrep**.\n\nReasons:\n\n* fast\n* sane defaults\n\n> quoted line\n\nMore at https://github.com/BurntSushi/ripgrep or r/commandline, thanks u/burntsushi",
+            "selftext_html": "<!-- SC_OFF --><div class=\"md\"><p>I&#39;ll start: <strong>ripgrep</strong>.</p>\n\n<p>Reasons:</p>\n\n<ul>\n<li>fast</li>\n<li>sane defaults</li>\n</ul>\n\n<blockquote>\n<p>quoted line</p>\n</blockquote>\n\n<p>More at <a href=\"https://github.com/BurntSushi/ripgrep\">https://github.com/BurntSushi/ripgrep</a> or <a href=\"/r/commandline\">r/commandline</a>, thanks <a href=\"/u/burntsushi\">u/burntsushi</a></p>\n</div><!-- SC_ON -->",
+            "is_self": true,
+            "url": "https://www.reddit.com/r/webdev/comments/1fxk2ab/whats_one_tool_you_cant_live_without/",
+            "permalink": "/r/webdev/comments/1fxk2ab/whats_one_tool_you_cant_live_without/",
+            "domain": "self.webdev",
+            "created_utc": 1728000000,
+            "edited": 1728003600,
+            "score": 1234,
+            "upvote_ratio": 0.97,
+            "num_comments": 412,
+            "num_crossposts": 2,
+            "over_18": false,
+            "spoiler": false,
+            "locked": false,
+            "stickied": false,
+            "archived": false,
+            "removed_by_category": null,
+            "sr_detail": { "community_icon": "https://styles.redditmedia.com/t5_2qs0q/styles/communityIcon_abc.png?width=256&s=xyz", "icon_img": "" }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "kind": "Listing",
+    "data": {
+      "children": [
+        {
+          "kind": "t1",
+          "data": {
+            "id": "lqm0001",
+            "author": "AutoModerator",
+            "body": "Please follow the rules.",
+            "body_html": "<div class=\"md\"><p>Please follow the rules.</p>\n</div>",
+            "permalink": "/r/webdev/comments/1fxk2ab/whats_one_tool_you_cant_live_without/lqm0001/",
+            "created_utc": 1728000060,
+            "score": 1,
+            "distinguished": "moderator",
+            "stickied": true,
+            "is_submitter": false,
+            "replies": ""
+          }
+        },
+        {
+          "kind": "t1",
+          "data": {
+            "id": "lqm0002",
+            "author": "vim_enjoyer",
+            "author_flair_text": "senior dev",
+            "body": "fzf, no contest.\n\nSee [the repo](https://github.com/junegunn/fzf).",
+            "body_html": "<div class=\"md\"><p>fzf, no contest.</p>\n\n<p>See <a href=\"https://github.com/junegunn/fzf\">the repo</a>.</p>\n</div>",
+            "permalink": "/r/webdev/comments/1fxk2ab/whats_one_tool_you_cant_live_without/lqm0002/",
+            "created_utc": 1728000300,
+            "edited": false,
+            "score": 456,
+            "is_submitter": false,
+            "replies": {
+              "kind": "Listing",
+              "data": {
+                "children": [
+                  {
+                    "kind": "t1",
+                    "data": {
+                      "id": "lqm0003",
+                      "author": "pixel_wrangler",
+                      "body": "Good one",
+                      "body_html": "<div class=\"md\"><p>Good one</p>\n</div>",
+                      "permalink": "/r/webdev/comments/1fxk2ab/whats_one_tool_you_cant_live_without/lqm0003/",
+                      "created_utc": 1728000600,
+                      "score": 88,
+                      "is_submitter": true,
+                      "replies": {
+                        "kind": "Listing",
+                        "data": {
+                          "children": [
+                            {
+                              "kind": "t1",
+                              "data": {
+                                "id": "lqm0004",
+                                "author": "[deleted]",
+                                "body": "[deleted]",
+                                "body_html": "<div class=\"md\"><p>[deleted]</p>\n</div>",
+                                "permalink": "/r/webdev/comments/1fxk2ab/whats_one_tool_you_cant_live_without/lqm0004/",
+                                "created_utc": 1728000900,
+                                "score": 3,
+                                "score_hidden": true,
+                                "replies": {
+                                  "kind": "Listing",
+                                  "data": { "children": [ { "kind": "more", "data": { "count": 0, "name": "t1__", "id": "_", "parent_id": "t1_lqm0004", "depth": 3, "children": [] } } ] }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  { "kind": "more", "data": { "count": 7, "name": "t1_lqm0009", "id": "lqm0009", "parent_id": "t1_lqm0002", "depth": 1, "children": ["lqm0009", "lqm0010"] } }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "kind": "t1",
+          "data": {
+            "id": "lqm0005",
+            "author": "gif_lord",
+            "body": "![gif](giphy|abc)",
+            "body_html": "<div class=\"md\"><p><a href=\"https://giphy.com/gifs/abc\">https://giphy.com/gifs/abc</a></p>\n</div>",
+            "media_metadata": {
+              "abc": { "status": "valid", "e": "AnimatedImage", "m": "image/gif", "s": { "y": 200, "x": 300, "gif": "https://i.redd.it/abc.gif", "mp4": "https://preview.redd.it/abc.gif?format=mp4&s=1" } }
+            },
+            "permalink": "/r/webdev/comments/1fxk2ab/whats_one_tool_you_cant_live_without/lqm0005/",
+            "created_utc": 1728001000,
+            "score": 12,
+            "replies": ""
+          }
+        },
+        { "kind": "more", "data": { "count": 380, "name": "t1_lqm0100", "id": "lqm0100", "parent_id": "t3_1fxk2ab", "depth": 0, "children": ["lqm0100"] } }
+      ]
+    }
+  }
+]

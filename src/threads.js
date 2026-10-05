@@ -10,6 +10,7 @@
 
 import * as cheerio from 'cheerio';
 import { canonicalUrl, createdAtFromCode, embedUrl, isThreadsHost, unwrapLink, parseThreadsRef } from './url.js';
+import { UpstreamError } from './errors.js';
 
 const BROWSER_HEADERS = {
   'user-agent':
@@ -24,12 +25,8 @@ const BROWSER_HEADERS = {
   'upgrade-insecure-requests': '1',
 };
 
-export class ThreadsError extends Error {
-  constructor(message, status = 502) {
-    super(message);
-    this.status = status;
-  }
-}
+export { UpstreamError as ThreadsError };
+const ThreadsError = UpstreamError;
 
 async function fetchHtml(url, { fetchImpl = fetch, timeoutMs = 12_000 } = {}) {
   const res = await fetchImpl(url, { headers: BROWSER_HEADERS, redirect: 'follow', signal: AbortSignal.timeout(timeoutMs) });
@@ -99,8 +96,10 @@ function finish(base, source, parsed, notes = []) {
   if (post.author?.username) post.url = canonicalUrl({ code: base.code, username: post.author.username });
   else post.url = post.url || base.url;
   return {
+    platform: 'threads',
     ...base,
     url: post.url,
+    proxyPath: `/t/${base.code}`,
     createdAt: post.createdAt,
     source,
     post,
@@ -421,7 +420,7 @@ function classifyLink(text, href) {
   return { type: 'link', kind, text, href, ...(threadsRef ? { code: threadsRef.code } : {}) };
 }
 
-function mergeTextSegments(segments) {
+export function mergeTextSegments(segments) {
   for (let i = segments.length - 1; i > 0; i--) {
     if (segments[i].type === 'text' && segments[i - 1].type === 'text') {
       segments[i - 1].text += segments[i].text;

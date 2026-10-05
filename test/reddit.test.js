@@ -201,6 +201,8 @@ test('fetchReddit: share links are resolved through their redirect', async () =>
   });
   const r = await fetchReddit({ platform: 'reddit', share: 'AbCd3fGh12', subreddit: 'webdev' }, { fetchImpl: f });
   assert.equal(r.code, '1fxk2ab');
+  const blocked = fakeFetch({});
+  await assert.rejects(fetchReddit({ platform: 'reddit', share: 'AbCd3fGh12', subreddit: 'webdev' }, { fetchImpl: blocked }), (e) => e.status === 502 && /paste the full link/.test(e.message));
 });
 
 test('open graph fallback when the page has no post element', () => {

@@ -62,7 +62,11 @@ async function resolveShare(ref, { fetchImpl = fetch, timeoutMs = 8_000 } = {}) 
   await res.body?.cancel();
   const resolved = loc ? parseRedditRef(new URL(loc, REDDIT_ORIGIN).href) : null;
   if (!resolved?.id) {
-    throw new UpstreamError(res.status === 404 ? 'This share link does not exist.' : `Could not resolve this Reddit share link (HTTP ${res.status}).`, res.status === 404 ? 404 : 502);
+    if (res.status === 404) throw new UpstreamError('This share link does not exist.', 404);
+    throw new UpstreamError(
+      `Reddit didn't reveal where this share link points (HTTP ${res.status}). Open it in a browser and paste the full link (…/r/SUB/comments/ID/…) instead.`,
+      502,
+    );
   }
   return resolved;
 }

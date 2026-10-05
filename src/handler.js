@@ -1,8 +1,11 @@
 // Platform-neutral request handler: (Request) => Promise<Response>.
 // Used by the Vercel function (api/index.js) and the local Node server (src/node-server.js).
 
-import { fetchThread, ThreadsError } from './threads.js';
+import { fetchThread } from './threads.js';
+import { fetchReddit } from './reddit.js';
+import { UpstreamError } from './errors.js';
 import { parseThreadsRef, parseThreadsPath, canonicalUrl } from './url.js';
+import { parseRedditRef, parseRedditPath, redditProxyPath, redditCanonicalUrl } from './reddit-url.js';
 import { renderHome, renderThread, renderError, renderMarkdown, renderText, renderLlmsTxt, mediaProxy } from './render.js';
 
 const env = (k) => (typeof process !== 'undefined' ? process.env[k] : undefined);
@@ -11,8 +14,10 @@ const CACHE_TTL = Number(env('CACHE_TTL_SECONDS')) || 300;
 const RATE_LIMIT = env('RATE_LIMIT_PER_MIN') != null ? Number(env('RATE_LIMIT_PER_MIN')) : 60;
 const TRUST_PROXY = env('TRUST_PROXY') === '1' || !!env('VERCEL');
 
-const MEDIA_HOST_RE = /(^|\.)(cdninstagram\.com|fbcdn\.net)$/i;
-const MEDIA_TYPES_RE = /^(image|video|audio)\/|^application\/octet-stream/i;
+// Meta's CDN (Threads) and Reddit's media hosts (i.redd.it, v.redd.it, preview.redd.it, *.redditmedia.com, …).
+const MEDIA_HOST_RE = /(^|\.)(cdninstagram\.com|fbcdn\.net|redditmedia\.com|redditstatic\.com)$|\.redd\.it$/i;
+const MEDIA_TYPES_RE = /^(image|video|audio)\/|^(application|binary)\/octet-stream|mpegurl/i;
+const HLS_TYPE_RE = /mpegurl/i;
 
 const CORS = { 'access-control-allow-origin': '*' };
 const BASE_HEADERS = { 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer' };
@@ -26,14 +31,25 @@ const TEXT = 'text/plain; charset=utf-8';
 
 const cache = new Map();
 function getThread(ref) {
-  const hit = cache.get(ref.code);
+  const key = refKey(ref);
+  const hit = cache.get(key);
   if (hit && hit.expires > Date.now()) return hit.promise;
-  const promise = fetchThread(ref);
-  cache.set(ref.code, { promise, expires: Date.now() + CACHE_TTL * 1000 });
-  promise.catch(() => cache.delete(ref.code));
+  const promise = isReddit(ref) ? fetchReddit(ref) : fetchThread(ref);
+  cache.set(key, { promise, expires: Date.now() + CACHE_TTL * 1000 });
+  promise.catch(() => cache.delete(key));
   if (cache.size > 300) cache.delete(cache.keys().next().value);
   return promise;
 }
+
+// ---------------------------------------------------------------------------
+// Refs: Threads { code, username } or Reddit { platform: 'reddit', id, subreddit, commentId } / { share }
+
+const isReddit = (ref) => ref?.platform === 'reddit';
+const parseRef = (s) => parseThreadsRef(s) || parseRedditRef(s);
+const parsePath = (p) => parseThreadsPath(p) || parseRedditPath(p);
+const refKey = (ref) => (isReddit(ref) ? `reddit:${ref.share ? `s/${ref.share}` : `${ref.id}/${ref.commentId || ''}`}` : ref.code);
+const refUrl = (ref) => (isReddit(ref) ? redditCanonicalUrl(ref) : canonicalUrl(ref));
+const refPath = (ref) => (isReddit(ref) ? redditProxyPath(ref) : `/t/${ref.code}`);
 
 // Best-effort per-instance rate limit.
 const hits = new Map();
@@ -79,7 +95,14 @@ function decorate(result, origin) {
     p && {
       ...p,
       author: p.author ? { ...p.author, avatarProxyUrl: abs(p.author.avatar) } : p.author,
-      media: (p.media || []).map((m) => ({ ...m, proxyUrl: abs(m.url), ...(m.poster ? { posterProxyUrl: abs(m.poster) } : {}) })),
+      media: (p.media || []).map((m) => ({
+        ...m,
+        proxyUrl: abs(m.url),
+        ...(m.poster ? { posterProxyUrl: abs(m.poster) } : {}),
+        ...(m.hlsUrl ? { hlsProxyUrl: abs(m.hlsUrl) } : {}),
+      })),
+      ...(p.community?.icon ? { community: { ...p.community, iconProxyUrl: abs(p.community.icon) } } : {}),
+      ...(p.linkPreview?.image ? { linkPreview: { ...p.linkPreview, imageProxyUrl: abs(p.linkPreview.image) } } : {}),
       quote: fix(p.quote),
       repostOf: fix(p.repostOf),
     };
@@ -133,12 +156,12 @@ async function threadResponse(req, url, info, ref, format, query) {
         return respond(renderThread(result, { origin, query }), 200, HTML, cacheHdr);
     }
   } catch (err) {
-    const known = err instanceof ThreadsError;
+    const known = err instanceof UpstreamError;
     if (!known) console.error(err);
     const status = known ? err.status : 500;
-    const message = known ? err.message : 'Unexpected error while loading this thread.';
+    const message = known ? err.message : 'Unexpected error while loading this post.';
     if (format === 'json') {
-      return respond(JSON.stringify({ ok: false, status, error: message, url: canonicalUrl(ref) }), status, JSON_T, { ...CORS, 'cache-control': 'no-store' });
+      return respond(JSON.stringify({ ok: false, status, error: message, url: refUrl(ref) }), status, JSON_T, { ...CORS, 'cache-control': 'no-store' });
     }
     return errorResponse(format, status, message, query, { 'cache-control': 'no-store' });
   }
@@ -146,7 +169,7 @@ async function threadResponse(req, url, info, ref, format, query) {
 
 function badInput(format, query) {
   const message = query
-    ? 'Paste the link of a single Threads post, e.g. https://www.threads.com/@user/post/ABC123xyz'
+    ? 'Paste the link of a single Threads or Reddit post, e.g. https://www.threads.com/@user/post/ABC123xyz or https://www.reddit.com/r/sub/comments/abc123/title/'
     : 'Missing "url" parameter.';
   return errorResponse(format, 400, message, query);
 }
@@ -159,7 +182,7 @@ async function proxyMedia(req, url) {
     return respond('Bad media URL\n', 400, TEXT);
   }
   if (target.protocol !== 'https:' || !MEDIA_HOST_RE.test(target.hostname)) {
-    return respond('Only Threads/Instagram CDN media can be proxied\n', 403, TEXT);
+    return respond('Only Threads/Instagram and Reddit media can be proxied\n', 403, TEXT);
   }
   const headers = { 'user-agent': 'Mozilla/5.0 threads-proxy', accept: '*/*' };
   for (const h of ['range', 'if-none-match', 'if-modified-since']) {
@@ -172,10 +195,24 @@ async function proxyMedia(req, url) {
   } catch {
     return respond('Could not fetch media\n', 502, TEXT);
   }
+  // Redirects must stay on the allowed hosts too.
+  if (up.url && !MEDIA_HOST_RE.test(new URL(up.url).hostname)) {
+    await up.body?.cancel();
+    return respond('Media redirected off the allowed hosts\n', 403, TEXT);
+  }
   const type = up.headers.get('content-type') || 'application/octet-stream';
   if (up.status !== 304 && up.ok && !MEDIA_TYPES_RE.test(type)) {
     await up.body?.cancel();
     return respond('Unsupported media type\n', 415, TEXT);
+  }
+  // HLS playlists (Reddit video with sound): route every playlist/segment URL inside through /media too.
+  if (up.ok && (HLS_TYPE_RE.test(type) || /\.m3u8$/i.test(target.pathname))) {
+    const body = rewritePlaylist(await up.text(), up.url || target.href);
+    return respond(req.method === 'HEAD' ? null : body, 200, type, {
+      'cache-control': 'public, max-age=300, s-maxage=300',
+      'access-control-allow-origin': '*',
+      'cross-origin-resource-policy': 'cross-origin',
+    });
   }
   const out = new Headers({
     'content-type': type,
@@ -189,6 +226,19 @@ async function proxyMedia(req, url) {
     if (v) out.set(h, v);
   }
   return new Response(req.method === 'HEAD' ? null : up.body, { status: up.status, headers: out });
+}
+
+function rewritePlaylist(text, base) {
+  const prox = (u) => mediaProxy(new URL(u, base).href);
+  return text
+    .split('\n')
+    .map((line) => {
+      const t = line.trim();
+      if (!t) return line;
+      if (t.startsWith('#')) return line.replace(/URI="([^"]+)"/g, (_, u) => `URI="${prox(u)}"`);
+      return prox(t);
+    })
+    .join('\n');
 }
 
 /**
@@ -216,7 +266,7 @@ export async function handle(req, info = {}) {
     if (path === '/' || path === '/view') {
       const q = url.searchParams.get('url') || '';
       const format = pickFormat(req, url);
-      const ref = parseThreadsRef(q);
+      const ref = parseRef(q);
       return ref ? threadResponse(req, url, info, ref, format, q) : badInput(format, q);
     }
     // /fetch is the public API; /api/thread is kept as an alias for older links.
@@ -236,7 +286,7 @@ export async function handle(req, info = {}) {
       }
       const f = (url.searchParams.get('format') || '').toLowerCase();
       const format = EXT_FORMAT[api[1]] || EXT_FORMAT[f] || 'json';
-      const ref = parseThreadsRef(q);
+      const ref = parseRef(q);
       return ref ? threadResponse(req, url, info, ref, format, q) : badInput(format, q);
     }
     if (path === '/media') return proxyMedia(req, url);
@@ -246,22 +296,24 @@ export async function handle(req, info = {}) {
     if (path === '/healthz') return respond('ok\n', 200, TEXT, { 'cache-control': 'no-store' });
     if (path === '/favicon.ico') return new Response(null, { status: 204 });
 
-    // Mirrored Threads paths: /@user/post/CODE, /t/CODE, with an optional .md/.json/.txt extension
+    // Mirrored paths with an optional .md/.json/.txt extension:
+    //   Threads: /@user/post/CODE, /t/CODE
+    //   Reddit:  /r/SUB/comments/ID[/slug[/COMMENT]], /comments/ID, /user/NAME/comments/ID, /r/SUB/s/SHARE
     const ext = (path.match(/\.(json|md|txt)$/) || [])[1];
-    const ref = parseThreadsPath(ext ? path.slice(0, -(ext.length + 1)) : path);
-    if (ref) return threadResponse(req, url, info, ref, EXT_FORMAT[ext] || pickFormat(req, url), canonicalUrl(ref));
+    const ref = parsePath(ext ? path.slice(0, -(ext.length + 1)) : path);
+    if (ref) return threadResponse(req, url, info, ref, EXT_FORMAT[ext] || pickFormat(req, url), refUrl(ref));
 
-    // A whole URL pasted after the slash: /https://www.threads.com/@x/post/Y
+    // A whole URL pasted after the slash: /https://www.threads.com/@x/post/Y, /https://www.reddit.com/r/…
     let tail = path.slice(1) + url.search;
     try {
       tail = decodeURIComponent(tail);
     } catch {
       /* as-is */
     }
-    const pasted = parseThreadsRef(tail.replace(/^(https?:)\/(?!\/)/i, '$1//'));
-    if (pasted) return new Response(null, { status: 302, headers: { location: `/t/${pasted.code}` } });
+    const pasted = parseRef(tail.replace(/^(https?:)\/(?!\/)/i, '$1//'));
+    if (pasted) return new Response(null, { status: 302, headers: { location: refPath(pasted) } });
 
-    return respond(renderError({ status: 404, message: 'Nothing here. Paste a Threads link above.' }), 404, HTML);
+    return respond(renderError({ status: 404, message: 'Nothing here. Paste a Threads or Reddit link above.' }), 404, HTML);
   } catch (err) {
     console.error(err);
     return respond('Internal error\n', 500, TEXT);

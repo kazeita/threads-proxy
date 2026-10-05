@@ -1,0 +1,39 @@
+{
+  "gallery": {
+    "id": "1g00gal", "subreddit": "EarthPorn", "subreddit_name_prefixed": "r/EarthPorn", "title": "Two views [OC]", "author": "hiker",
+    "is_self": false, "is_gallery": true, "url": "https://www.reddit.com/gallery/1g00gal", "permalink": "/r/EarthPorn/comments/1g00gal/two_views_oc/",
+    "created_utc": 1728000000, "score": 5000, "upvote_ratio": 0.99, "num_comments": 10, "num_crossposts": 0, "over_18": false,
+    "gallery_data": { "items": [ { "media_id": "img2", "id": 2, "caption": "Sunset" }, { "media_id": "img1", "id": 1 }, { "media_id": "bad", "id": 3 } ] },
+    "media_metadata": {
+      "img1": { "status": "valid", "e": "Image", "m": "image/jpg", "s": { "y": 1080, "x": 1920, "u": "https://preview.redd.it/img1.jpg?width=1920&format=pjpg&auto=webp&s=aaa" } },
+      "img2": { "status": "valid", "e": "Image", "m": "image/jpg", "s": { "y": 3000, "x": 4000, "u": "https://preview.redd.it/img2.jpg?width=4000&format=pjpg&auto=webp&s=bbb" } },
+      "bad": { "status": "failed" }
+    }
+  },
+  "video": {
+    "id": "1g00vid", "subreddit": "aww", "subreddit_name_prefixed": "r/aww", "title": "Cat", "author": "catperson",
+    "is_self": false, "is_video": true, "url": "https://v.redd.it/abc123", "permalink": "/r/aww/comments/1g00vid/cat/", "domain": "v.redd.it",
+    "created_utc": 1728000000, "score": 77, "upvote_ratio": 0.9, "num_comments": 3, "num_crossposts": 0, "over_18": false,
+    "preview": { "images": [ { "source": { "url": "https://external-preview.redd.it/poster.png?s=1", "width": 720, "height": 1280 } } ] },
+    "secure_media": { "reddit_video": { "fallback_url": "https://v.redd.it/abc123/DASH_720.mp4?source=fallback", "hls_url": "https://v.redd.it/abc123/HLSPlaylist.m3u8?a=1&v=1&f=sd", "dash_url": "https://v.redd.it/abc123/DASHPlaylist.mpd?a=1", "has_audio": true, "is_gif": false, "duration": 12, "width": 720, "height": 1280 } }
+  },
+  "image": {
+    "id": "1g00img", "subreddit": "pics", "subreddit_name_prefixed": "r/pics", "title": "A photo", "author": "snapper",
+    "is_self": false, "post_hint": "image", "url": "https://i.redd.it/photo.jpeg", "permalink": "/r/pics/comments/1g00img/a_photo/", "domain": "i.redd.it",
+    "created_utc": 1728000000, "score": 10, "upvote_ratio": 0.8, "num_comments": 0, "num_crossposts": 0, "over_18": true, "spoiler": true,
+    "preview": { "images": [ { "source": { "url": "https://preview.redd.it/photo.jpeg?auto=webp&s=1", "width": 3024, "height": 4032 } } ] }
+  },
+  "link": {
+    "id": "1g00lnk", "subreddit": "news", "subreddit_name_prefixed": "r/news", "title": "Something happened", "author": "reporter",
+    "is_self": false, "post_hint": "link", "url": "https://example.com/story?id=1", "url_overridden_by_dest": "https://example.com/story?id=1", "domain": "example.com",
+    "permalink": "/r/news/comments/1g00lnk/something_happened/", "created_utc": 1728000000, "score": 900, "upvote_ratio": 0.95, "num_comments": 50, "num_crossposts": 1,
+    "preview": { "images": [ { "source": { "url": "https://external-preview.redd.it/thumb.jpg?s=2", "width": 1200, "height": 630 } } ] },
+    "poll_data": null
+  },
+  "crosspost": {
+    "id": "1g00xp0", "subreddit": "funny", "subreddit_name_prefixed": "r/funny", "title": "Cat (xpost)", "author": "reposter",
+    "is_self": false, "url": "/r/aww/comments/1g00vid/cat/", "permalink": "/r/funny/comments/1g00xp0/cat_xpost/",
+    "created_utc": 1728001000, "score": 3, "upvote_ratio": 0.6, "num_comments": 0, "num_crossposts": 0,
+    "crosspost_parent_list": ["__VIDEO__"]
+  }
+}

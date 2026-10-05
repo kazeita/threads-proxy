@@ -2,7 +2,7 @@
   "name": "threads-proxy",
   "version": "1.0.0",
   "private": true,
-  "description": "Read any public Threads post without logging in. Paste a link, get clean HTML, JSON or Markdown — built for people and AI agents.",
+  "description": "Read any public Threads or Reddit post without logging in. Paste a link, get clean HTML, JSON or Markdown — built for people and AI agents.",
   "type": "module",
   "main": "src/handler.js",
   "scripts": {
